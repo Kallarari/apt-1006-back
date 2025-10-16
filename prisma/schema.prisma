@@ -22,3 +22,67 @@ model User {
 
   @@map("users")
 }
+
+// Modelo de estágios de negócio
+model DealStage {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(100)
+  position Int    @default(0)
+
+  @@map("deal_stages")
+}
+
+// Modelo de negócios
+model Business {
+  id                    Int      @id @default(autoincrement())
+  leadId               String?  @db.VarChar(50) @map("lead_id")
+  propertyId           String?  @db.VarChar(50) @map("property_id")
+  stageId              String?  @db.VarChar(50) @map("stage_id")
+  title                String?  @db.VarChar(200)
+  description          String?
+  businessOrigin       String?  @db.VarChar(100) @map("business_origin")
+  status               String?  @db.VarChar(50)
+  estimatedMargin      Decimal? @db.Decimal(10, 2) @map("estimated_margin")
+  closingValue         Decimal? @db.Decimal(10, 2) @map("closing_value")
+  paymentMethod        String?  @db.VarChar(50) @map("payment_method")
+  lossReason           String?  @map("loss_reason")
+  commissionResponsible String? @db.VarChar(100) @map("commission_responsible")
+  saleResponsible      String?  @db.VarChar(100) @map("sale_responsible")
+  scheduledMeetings    Int?     @map("scheduled_meetings")
+  timeInStage          Int?     @map("time_in_stage")
+  expectedClosingDate  DateTime? @db.Date @map("expected_closing_date")
+  documentPending      Boolean? @default(false) @map("document_pending")
+  observation          String?
+  createdBy            String?  @db.VarChar(100) @map("created_by")
+  createdDate          DateTime @default(now()) @map("created_date")
+  lastUpdated          DateTime @updatedAt @map("last_updated")
+
+  // Relacionamento com leads
+  leads                Lead[]
+
+  @@map("business")
+}
+
+// Modelo de leads
+model Lead {
+  id                      Int      @id @default(autoincrement())
+  businessId              Int?     @map("business_id")
+  leadStatus              String?  @db.VarChar(50) @map("lead_status")
+  email                   String?  @db.VarChar(150)
+  cpfCnpj                 String?  @db.VarChar(20) @map("cpf_cnpj")
+  phone                   String?  @db.VarChar(20)
+  phone2                  String?  @db.VarChar(20) @map("phone_2")
+  personType              String?  @db.VarChar(10) @map("person_type")
+  deviceUsed              String?  @db.VarChar(100) @map("device_used")
+  campaignId              String?  @db.VarChar(50) @map("campaign_id")
+  photoUrl                String?  @map("photo_url")
+  interestReason          String?  @map("interest_reason")
+  estimatedAverageTicket  Decimal? @db.Decimal(10, 2) @map("estimated_average_ticket")
+  entryDate               DateTime @default(now()) @map("entry_date")
+  lastLogin               DateTime @default(now()) @map("last_login")
+
+  // Relacionamento com business
+  business                Business? @relation(fields: [businessId], references: [id])
+
+  @@map("leads")
+}

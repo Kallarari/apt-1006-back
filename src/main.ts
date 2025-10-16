@@ -5,10 +5,8 @@ import { PrismaService } from './prisma/prisma.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Configurações para Cloud Run
   app.enableCors();
   
-  // Teste de conexão com banco de dados
   const prismaService = app.get(PrismaService);
   try {
     await prismaService.$connect();
@@ -18,7 +16,7 @@ async function bootstrap() {
   }
   
   const port = process.env.PORT || 8080;
-  const host = '0.0.0.0'; // Importante para Cloud Run
+  const host = '0.0.0.0';
   
   await app.listen(port, host);
   console.log(`🚀 Application is running on: http://${host}:${port}`);

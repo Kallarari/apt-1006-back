@@ -14,6 +14,7 @@ export function getDatabaseUrl(configService: ConfigService): string {
   // URL encode a senha para evitar problemas com caracteres especiais
   const encodedPassword = encodeURIComponent(dbPassword);
   
-  return `postgresql://${dbUser}:${encodedPassword}@${dbHost}:${dbPort}/${dbDatabase}`;
+  // Configurações para Supabase com pgbouncer para evitar prepared statements
+  return `postgresql://${dbUser}:${encodedPassword}@${dbHost}:${dbPort}/${dbDatabase}?pgbouncer=true&connection_limit=1&pool_timeout=20&statement_timeout=0&prepared_statements=false`;
 }
 
