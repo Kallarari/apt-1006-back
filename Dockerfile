@@ -37,7 +37,6 @@ USER nestjs
 # Exponha a porta 8080
 EXPOSE 8080
 
-# Configure a variável de ambiente PORT
 ENV PORT=8080
 ENV NODE_ENV=production
 
