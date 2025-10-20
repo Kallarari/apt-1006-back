@@ -12,7 +12,7 @@ export class CreateCampaignDto {
   @IsUrl()
   @IsOptional()
   @MaxLength(500)
-  creativeLink?: string;
+  redirectUrl?: string;
 
   @IsDateString()
   @IsOptional()

@@ -12,7 +12,7 @@ export class CampaignsService {
     if (existsWithTitle) {
       throw new BadRequestException(`Já existe uma campanha com o título "${dto.title}"`);
     }
-    const campaign = await this.prisma.campaign.create({ data: {...dto, startDate:dto.startDate? new Date(dto.startDate):null} });
+    const campaign = await this.prisma.campaign.create({ data: {...dto, clicksToDate:0, startDate:dto.startDate? new Date(dto.startDate):null} });
     return { ...campaign, message: 'Campanha criada com sucesso' };
   }
 
@@ -54,7 +54,7 @@ export class CampaignsService {
   }
 
   async registerClick(title: string) {
-    const exists = await this.prisma.campaign.findFirst({ where: { title: title } });
+    const exists = await this.prisma.campaign.findFirst({ where: { title: atob(title) } });
     if (!exists) {
       throw new NotFoundException(`Campanha com título ${title} não encontrada`);
     }
@@ -62,7 +62,8 @@ export class CampaignsService {
       where: { id: exists.id },
       data: { clicksToDate: { increment: 1 } },
     });
-    return { ...updated, message: 'Clique registrado com sucesso' };
+
+    return { redirectUrl: (updated as any).redirectUrl ?? null, message: 'Clique registrado com sucesso' };
   }
 }
 

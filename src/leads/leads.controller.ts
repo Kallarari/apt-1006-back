@@ -86,7 +86,27 @@ export class LeadsController {
   }
 }
 
+// Endpoint público para criação de lead via formulário (sem autenticação)
+@Controller('leads')
+export class LeadsPublicController {
+  constructor(private readonly leadsService: LeadsService) {}
 
-
-
-
+  @Post('form')
+  @HttpCode(HttpStatus.CREATED)
+  createFromForm(
+    @Body()
+    body: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+    },
+  ) {
+    return this.leadsService.create({
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+    });
+  }
+}
