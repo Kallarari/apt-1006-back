@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { DealStagesModule } from './deal-stages/deal-stages.module';
 import { BusinessModule } from './business/business.module';
 import { LeadsModule } from './leads/leads.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { LeadsModule } from './leads/leads.module';
     DealStagesModule,
     BusinessModule,
     LeadsModule,
+    CampaignsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
