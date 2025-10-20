@@ -68,6 +68,8 @@ model Lead {
   id                      Int      @id @default(autoincrement())
   businessId              Int?     @map("business_id")
   leadStatus              String?  @db.VarChar(50) @map("lead_status")
+  firstName               String?  @db.VarChar(100) @map("first_name")
+  lastName                String?  @db.VarChar(100) @map("last_name")
   email                   String?  @db.VarChar(150)
   cpfCnpj                 String?  @db.VarChar(20) @map("cpf_cnpj")
   phone                   String?  @db.VarChar(20)
@@ -85,4 +87,27 @@ model Lead {
   business                Business? @relation(fields: [businessId], references: [id])
 
   @@map("leads")
+}
+
+// Modelo de campanhas de marketing
+model Campaign {
+  id              Int      @id @default(autoincrement())
+  channel         String   @db.VarChar(100)
+  totalBudget     Decimal? @db.Decimal(15, 2) @map("total_budget")
+  redirectUrl     String?  @db.VarChar(500) @map("redirect_url")
+  startDate       DateTime? @db.Date @map("start_date")
+  campaignType    String?  @db.VarChar(100) @map("campaign_type")
+  title           String   @db.VarChar(255)
+  description     String?
+  status          String?  @db.VarChar(50)
+  responsibleName String?  @db.VarChar(200) @map("responsible_name")
+  dailyBudget     Decimal? @db.Decimal(15, 2) @map("daily_budget")
+  webhookUrl      String?  @db.VarChar(500) @map("webhook_url")
+  costPerClick    Decimal? @db.Decimal(10, 4) @map("cost_per_click")
+  clicksToDate    Int?     @map("clicks_to_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("campaigns")
+  @@unique([title])
 }

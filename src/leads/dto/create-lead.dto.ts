@@ -18,6 +18,16 @@ export class CreateLeadDto {
   @MaxLength(50, { message: 'Status do lead deve ter no máximo 50 caracteres' })
   leadStatus?: string;
 
+  @IsString({ message: 'Primeiro nome deve ser uma string' })
+  @IsOptional()
+  @MaxLength(100, { message: 'Primeiro nome deve ter no máximo 100 caracteres' })
+  firstName?: string;
+
+  @IsString({ message: 'Sobrenome deve ser uma string' })
+  @IsOptional()
+  @MaxLength(100, { message: 'Sobrenome deve ter no máximo 100 caracteres' })
+  lastName?: string;
+
   @IsEmail({}, { message: 'Email deve ser um endereço de email válido' })
   @IsOptional()
   @MaxLength(150, { message: 'Email deve ter no máximo 150 caracteres' })
@@ -66,6 +76,8 @@ export class CreateLeadDto {
   @Min(0, { message: 'Ticket médio estimado deve ser maior ou igual a 0' })
   estimatedAverageTicket?: number;
 }
+
+
 
 
 
