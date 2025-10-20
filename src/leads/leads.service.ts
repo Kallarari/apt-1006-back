@@ -1,14 +1,19 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class LeadsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createLeadDto: CreateLeadDto) {
-    const { businessId, email, cpfCnpj } = createLeadDto;
+  async create(createLeadDto: CreateLeadDto & { utm_c?: string }) {
+    const { businessId, email, utm_c, firstName, lastName, phone } = createLeadDto;
 
     // Verificar se o business existe (se businessId foi fornecido)
     if (businessId) {
@@ -17,7 +22,9 @@ export class LeadsService {
       });
 
       if (!business) {
-        throw new NotFoundException(`Business com ID ${businessId} não encontrado`);
+        throw new NotFoundException(
+          `Business com ID ${businessId} não encontrado`,
+        );
       }
     }
 
@@ -32,20 +39,35 @@ export class LeadsService {
       }
     }
 
-    // Verificar se já existe um lead com o mesmo CPF/CNPJ (se cpfCnpj foi fornecido)
-    if (cpfCnpj) {
-      const existingLead = await this.prisma.lead.findFirst({
-        where: { cpfCnpj },
-      });
+    let campaign: any | null = null;
 
-      if (existingLead) {
-        throw new ConflictException('Já existe um lead com este CPF/CNPJ');
+    if (utm_c) {
+      campaign = await this.prisma.campaign.findFirst({
+        where: { title: atob(utm_c) },
+      });
+      let campaignTitle = utm_c;
+      try {
+        // tentar decodificar base64; se falhar, usar valor original
+        campaignTitle = Buffer.from(utm_c, 'base64').toString('utf-8');
+      } catch {}
+      if (campaign) {
+        await this.prisma.campaign.update({
+          where: { id: campaign.id },
+          data: { clicksToDate: { increment: 1 } },
+        });
       }
     }
 
     // Criar o lead
     const lead = await this.prisma.lead.create({
-      data: createLeadDto,
+      data: {
+        leadStatus: 'novo',
+        email: createLeadDto.email,
+        phone: createLeadDto.phone,
+        firstName: createLeadDto.firstName,
+        lastName: createLeadDto.lastName,
+        campaignId: campaign ? campaign.id.toString() : null,
+      },
       include: {
         business: true,
       },
@@ -69,10 +91,7 @@ export class LeadsService {
           },
         },
       },
-      orderBy: [
-        { entryDate: 'desc' },
-        { id: 'desc' },
-      ],
+      orderBy: [{ entryDate: 'desc' }, { id: 'desc' }],
     });
 
     return {
@@ -127,7 +146,9 @@ export class LeadsService {
       });
 
       if (!business) {
-        throw new NotFoundException(`Business com ID ${businessId} não encontrado`);
+        throw new NotFoundException(
+          `Business com ID ${businessId} não encontrado`,
+        );
       }
     }
 
@@ -208,7 +229,9 @@ export class LeadsService {
     });
 
     if (!business) {
-      throw new NotFoundException(`Business com ID ${businessId} não encontrado`);
+      throw new NotFoundException(
+        `Business com ID ${businessId} não encontrado`,
+      );
     }
 
     const leads = await this.prisma.lead.findMany({
@@ -223,10 +246,7 @@ export class LeadsService {
           },
         },
       },
-      orderBy: [
-        { entryDate: 'desc' },
-        { id: 'desc' },
-      ],
+      orderBy: [{ entryDate: 'desc' }, { id: 'desc' }],
     });
 
     return {
@@ -250,10 +270,7 @@ export class LeadsService {
           },
         },
       },
-      orderBy: [
-        { entryDate: 'desc' },
-        { id: 'desc' },
-      ],
+      orderBy: [{ entryDate: 'desc' }, { id: 'desc' }],
     });
 
     return {
@@ -305,7 +322,9 @@ export class LeadsService {
     });
 
     if (!lead) {
-      throw new NotFoundException(`Lead com CPF/CNPJ ${cpfCnpj} não encontrado`);
+      throw new NotFoundException(
+        `Lead com CPF/CNPJ ${cpfCnpj} não encontrado`,
+      );
     }
 
     return {
@@ -316,7 +335,7 @@ export class LeadsService {
 
   async getStatistics() {
     const totalLeads = await this.prisma.lead.count();
-    
+
     const leadsByStatus = await this.prisma.lead.groupBy({
       by: ['leadStatus'],
       _count: { leadStatus: true },
@@ -350,15 +369,15 @@ export class LeadsService {
 
     return {
       totalLeads,
-      leadsByStatus: leadsByStatus.map(item => ({
+      leadsByStatus: leadsByStatus.map((item) => ({
         leadStatus: item.leadStatus,
         count: item._count.leadStatus,
       })),
-      leadsByPersonType: leadsByPersonType.map(item => ({
+      leadsByPersonType: leadsByPersonType.map((item) => ({
         personType: item.personType,
         count: item._count.personType,
       })),
-      leadsByBusiness: leadsByBusiness.map(item => ({
+      leadsByBusiness: leadsByBusiness.map((item) => ({
         businessId: item.businessId,
         count: item._count.businessId,
       })),
@@ -368,8 +387,3 @@ export class LeadsService {
     };
   }
 }
-
-
-
-
-
