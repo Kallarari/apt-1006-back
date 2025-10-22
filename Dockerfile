@@ -24,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # Remova dependências de desenvolvimento
-RUN npm prune --production
+# RUN npm prune --production
 
 # Crie um usuário não-root para segurança
 RUN addgroup -g 1001 -S nodejs
