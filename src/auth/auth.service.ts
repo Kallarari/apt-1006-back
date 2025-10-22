@@ -114,5 +114,60 @@ export class AuthService {
 
     return user;
   }
+
+  async findOrCreateOAuthUser(params: {
+    provider: 'google';
+    providerId: string;
+    email: string;
+    name?: string;
+  }) {
+    const { email, name } = params;
+
+    if (!email) {
+      throw new UnauthorizedException('Não foi possível obter o email do Google');
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    if (existing) {
+      if (!existing.isActive) {
+        throw new UnauthorizedException('Usuário inativo');
+      }
+      return existing;
+    }
+
+    const randomPassword = await bcrypt.hash(`oauth:${Date.now()}:${Math.random()}`, 10);
+    const created = await this.prisma.user.create({
+      data: {
+        email,
+        password: randomPassword,
+        name,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    return created;
+  }
+
+  async oauthLoginFinalize(user: { id: number; email: string; name?: string }) {
+    const payload = { sub: user.id, email: user.email };
+    const token = this.jwtService.sign(payload);
+    return { user, token, message: 'Login com Google realizado com sucesso' };
+  }
 }
 

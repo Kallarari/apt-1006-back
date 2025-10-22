@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { BusinessService } from './business.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
@@ -65,13 +66,20 @@ export class BusinessController {
     return this.businessService.findOne(id);
   }
 
+  @Get(':id/history')
+  @HttpCode(HttpStatus.OK)
+  findHistory(@Param('id', ParseIntPipe) id: number) {
+    return this.businessService.getHistory(id);
+  }
+
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBusinessDto: UpdateBusinessDto,
+  @Req() req: any,
   ) {
-    return this.businessService.update(id, updateBusinessDto);
+    return this.businessService.update(id, updateBusinessDto, req.user?.id);
   }
 
   @Patch(':id/change-stage')
@@ -79,8 +87,9 @@ export class BusinessController {
   changeStage(
     @Param('id', ParseIntPipe) id: number,
     @Body() changeStageDto: ChangeStageDto,
+  @Req() req: any,
   ) {
-    return this.businessService.changeStage(id, changeStageDto);
+    return this.businessService.changeStage(id, changeStageDto, req.user?.id);
   }
 
   @Delete(':id')

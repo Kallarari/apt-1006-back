@@ -111,3 +111,18 @@ model Campaign {
   @@map("campaigns")
   @@unique([title])
 }
+
+// Histórico de alterações de Business
+model BusinessHistory {
+  id          Int      @id @default(autoincrement())
+  businessId  Int      @map("business_id")
+  field       String   @db.VarChar(100)
+  oldValue    Json?    @map("old_value")
+  newValue    Json?    @map("new_value")
+  changedBy   Int?     @map("changed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("business_history")
+  @@index([businessId])
+  @@index([createdAt])
+}
