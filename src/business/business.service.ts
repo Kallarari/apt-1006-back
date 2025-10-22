@@ -49,7 +49,7 @@ export class BusinessService {
     };
   }
 
-  async update(id: number, updateBusinessDto: UpdateBusinessDto) {
+  async update(id: number, updateBusinessDto: UpdateBusinessDto, changedBy?: number) {
     // Verificar se o negócio existe
     const existingBusiness = await this.prisma.business.findUnique({
       where: { id },
@@ -59,11 +59,34 @@ export class BusinessService {
       throw new NotFoundException(`Negócio com ID ${id} não encontrado`);
     }
 
+    // Calcular diffs campo a campo
+    const diffs: { field: string; oldValue: any; newValue: any }[] = [];
+    for (const key of Object.keys(updateBusinessDto) as (keyof UpdateBusinessDto)[]) {
+      const newValue = (updateBusinessDto as any)[key];
+      const oldValue = (existingBusiness as any)[key];
+      if (newValue !== undefined && newValue !== oldValue) {
+        diffs.push({ field: String(key), oldValue, newValue });
+      }
+    }
+
     // Atualizar o negócio
     const updatedBusiness = await this.prisma.business.update({
       where: { id },
       data: updateBusinessDto,
     });
+
+    // Persistir histórico para cada campo alterado
+    if (diffs.length > 0) {
+      await this.prisma.businessHistory.createMany({
+        data: diffs.map((d) => ({
+          businessId: id,
+          field: d.field,
+          oldValue: d.oldValue as any,
+          newValue: d.newValue as any,
+          changedBy: changedBy ?? null,
+        })),
+      });
+    }
 
     return {
       ...updatedBusiness,
@@ -91,7 +114,7 @@ export class BusinessService {
     };
   }
 
-  async changeStage(id: number, changeStageDto: ChangeStageDto) {
+  async changeStage(id: number, changeStageDto: ChangeStageDto, changedBy?: number) {
     const { stageId } = changeStageDto;
 
     // Verificar se o negócio existe
@@ -107,6 +130,17 @@ export class BusinessService {
     const updatedBusiness = await this.prisma.business.update({
       where: { id },
       data: { stageId },
+    });
+
+    // Histórico da mudança de stage
+    await this.prisma.businessHistory.create({
+      data: {
+        businessId: id,
+        field: 'stageId',
+        oldValue: existingBusiness.stageId as any,
+        newValue: stageId as any,
+        changedBy: changedBy ?? null,
+      },
     });
 
     return {
@@ -209,6 +243,45 @@ export class BusinessService {
       totalValue: totalValue._sum.closingValue || 0,
       totalMargin: totalMargin._sum.estimatedMargin || 0,
       message: 'Estatísticas recuperadas com sucesso',
+    };
+  }
+
+  async getHistory(businessId: number) {
+    // verificar existência do business (garante 404 coerente)
+    const exists = await this.prisma.business.findUnique({ where: { id: businessId } });
+    if (!exists) {
+      throw new NotFoundException(`Negócio com ID ${businessId} não encontrado`);
+    }
+
+    const history = await this.prisma.businessHistory.findMany({
+      where: { businessId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+
+    // buscar nomes dos usuários envolvidos
+    const userIds = Array.from(new Set(history.map(h => h.changedBy).filter(Boolean))) as number[];
+    const users = userIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, name: true, email: true },
+        })
+      : [];
+    const idToUser = new Map(users.map(u => [u.id, u]));
+
+    return {
+      data: history.map(h => ({
+        id: h.id,
+        businessId: h.businessId,
+        field: h.field,
+        oldValue: h.oldValue,
+        newValue: h.newValue,
+        changedBy: h.changedBy,
+        changedByName: h.changedBy ? idToUser.get(h.changedBy)?.name ?? null : null,
+        changedByEmail: h.changedBy ? idToUser.get(h.changedBy)?.email ?? null : null,
+        createdAt: h.createdAt,
+      })),
+      count: history.length,
+      message: 'Histórico recuperado com sucesso',
     };
   }
 }
