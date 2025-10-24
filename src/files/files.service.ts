@@ -22,9 +22,8 @@ export class FilesService {
     if (!this.bucketName) {
       throw new Error('GCS_BUCKET must be defined');
     }
-
     //this.storage = new Storage({ projectId, credentials: require('../../../cloud-storage-apt1006.json') });
-    this.storage = new Storage({ projectId });
+    this.storage = new Storage();
   }
 
   private validateFile(file: Express.Multer.File) {
