@@ -23,7 +23,7 @@ export class FilesService {
       throw new Error('GCS_BUCKET must be defined');
     }
 
-    this.storage = new Storage({ projectId });
+    this.storage = new Storage();
   }
 
   private validateFile(file: Express.Multer.File) {
