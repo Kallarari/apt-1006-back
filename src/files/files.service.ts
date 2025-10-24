@@ -23,7 +23,8 @@ export class FilesService {
       throw new Error('GCS_BUCKET must be defined');
     }
 
-    this.storage = new Storage();
+    //this.storage = new Storage({ projectId, credentials: require('../../../cloud-storage-apt1006.json') });
+    this.storage = new Storage({ projectId });
   }
 
   private validateFile(file: Express.Multer.File) {
@@ -49,6 +50,7 @@ export class FilesService {
   private toResponse(file: {
     id: bigint;
     publicUrl: string;
+    filename: string;
     documentType: string | null;
     createdAt: Date;
     deletedAt: Date | null;
@@ -58,6 +60,7 @@ export class FilesService {
     return {
       id: file.id.toString(),
       publicUrl: file.publicUrl,
+      filename: file.filename,
       documentType: file.documentType,
       createdAt: file.createdAt,
       deletedAt: file.deletedAt,
@@ -92,15 +95,16 @@ export class FilesService {
         stream.end(file.buffer);
       });
 
-      await blob.makePublic();
+//      await blob.makePublic();
       const publicUrl = `https://storage.googleapis.com/${this.bucketName}/${encodeURI(gcsPath)}`;
 
       const created = await this.prisma.file.create({
         data: {
           publicUrl,
+          filename: file.originalname || safeOriginal,
           documentType: file.mimetype,
           uploadedBy: BigInt(uploadedBy),
-        },
+        } as any,
       });
 
       const serialized = this.toResponse(created as any);
