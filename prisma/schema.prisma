@@ -126,3 +126,17 @@ model BusinessHistory {
   @@index([businessId])
   @@index([createdAt])
 }
+
+// Arquivos enviados para armazenamento externo (Google Cloud Storage)
+model File {
+  id           BigInt   @id @default(autoincrement())
+  publicUrl    String   @map("public_url")
+  documentType String?  @db.VarChar(50) @map("document_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+  uploadedBy   BigInt   @map("uploaded_by")
+  deletedBy    BigInt?  @map("deleted_by")
+
+  @@map("files")
+  @@index([uploadedBy])
+}

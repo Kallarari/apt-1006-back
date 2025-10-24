@@ -9,6 +9,7 @@ import { DealStagesModule } from './deal-stages/deal-stages.module';
 import { BusinessModule } from './business/business.module';
 import { LeadsModule } from './leads/leads.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
     BusinessModule,
     LeadsModule,
     CampaignsModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
