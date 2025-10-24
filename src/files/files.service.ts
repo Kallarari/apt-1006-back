@@ -18,13 +18,13 @@ export class FilesService {
   constructor(private config: ConfigService, private prisma: PrismaService) {
     const projectId = process.env.GCP_PROJECT as string;
     this.bucketName = process.env.BUCKET_NAME as string;
+  const credential = process.env.BUCKET_CREDENTIALS as string;
 
     if (!this.bucketName) {
       throw new Error('GCS_BUCKET must be defined');
     }
 
-    //this.storage = new Storage({ projectId, credentials: require('../../../cloud-storage-apt1006.json') });
-    this.storage = new Storage({ projectId });
+    this.storage = new Storage();
   }
 
   private validateFile(file: Express.Multer.File) {
