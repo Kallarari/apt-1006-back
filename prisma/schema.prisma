@@ -131,6 +131,7 @@ model BusinessHistory {
 model File {
   id           BigInt   @id @default(autoincrement())
   publicUrl    String   @map("public_url")
+  filename     String   @db.VarChar(255)
   documentType String?  @db.VarChar(50) @map("document_type")
   createdAt    DateTime @default(now()) @map("created_at")
   deletedAt    DateTime? @map("deleted_at")
