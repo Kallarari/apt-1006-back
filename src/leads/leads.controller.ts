@@ -16,9 +16,10 @@ import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InternalOnlyGuard } from '../auth/guards/internal-only.guard';
 
 @Controller('leads')
-@UseGuards(JwtAuthGuard) // Todos os endpoints protegidos por JWT
+@UseGuards(JwtAuthGuard, InternalOnlyGuard) // Protegido por JWT e restrito a internos
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 

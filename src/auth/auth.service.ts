@@ -34,14 +34,17 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-      },
+        userType: 'external',
+      } as any,
       select: {
         id: true,
         email: true,
         name: true,
         isActive: true,
         createdAt: true,
-      },
+        userType: true,
+        userInterestId: true,
+      } as any,
     });
 
     // Gerar token JWT
@@ -59,9 +62,19 @@ export class AuthService {
     const { email, password } = loginDto;
 
     // Buscar usuário
-    const user = await this.prisma.user.findUnique({
+    const user = (await this.prisma.user.findUnique({
       where: { email },
-    });
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+        password: true,
+        userType: true,
+        userInterestId: true,
+      } as any,
+    })) as any;
 
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
@@ -90,6 +103,8 @@ export class AuthService {
         name: user.name,
         isActive: user.isActive,
         createdAt: user.createdAt,
+        userType: user.userType,
+        userInterestId: user.userInterestId,
       },
       token,
       message: 'Login realizado com sucesso',
@@ -97,7 +112,7 @@ export class AuthService {
   }
 
   async validateUser(payload: any) {
-    const user = await this.prisma.user.findUnique({
+    const user = (await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
         id: true,
@@ -105,8 +120,10 @@ export class AuthService {
         name: true,
         isActive: true,
         createdAt: true,
-      },
-    });
+        userType: true,
+        userInterestId: true,
+      } as any,
+    })) as any;
 
     if (!user || !user.isActive) {
       return null;
@@ -127,7 +144,7 @@ export class AuthService {
       throw new UnauthorizedException('Não foi possível obter o email do Google');
     }
 
-    const existing = await this.prisma.user.findUnique({
+    const existing = (await this.prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
@@ -135,12 +152,18 @@ export class AuthService {
         name: true,
         isActive: true,
         createdAt: true,
-      },
-    });
+        userType: true,
+        userInterestId: true,
+      } as any,
+    })) as any;
 
     if (existing) {
       if (!existing.isActive) {
         throw new UnauthorizedException('Usuário inativo');
+      }
+      const normalized = (existing.userType || '').toLowerCase();
+      if (normalized !== 'external' && normalized !== 'externo') {
+        throw new UnauthorizedException('Login com Google permitido apenas para usuários externos');
       }
       return existing;
     }
@@ -151,14 +174,17 @@ export class AuthService {
         email,
         password: randomPassword,
         name,
-      },
+        userType: 'external',
+      } as any,
       select: {
         id: true,
         email: true,
         name: true,
         isActive: true,
         createdAt: true,
-      },
+        userType: true,
+        userInterestId: true,
+      } as any,
     });
 
     return created;
