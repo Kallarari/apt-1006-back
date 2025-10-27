@@ -18,9 +18,10 @@ import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { ChangeStageDto } from './dto/change-stage.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InternalOnlyGuard } from '../auth/guards/internal-only.guard';
 
 @Controller('business')
-@UseGuards(JwtAuthGuard) // Todos os endpoints protegidos por JWT
+@UseGuards(JwtAuthGuard, InternalOnlyGuard) // Protegido por JWT e restrito a internos
 export class BusinessController {
   constructor(private readonly businessService: BusinessService) {}
 

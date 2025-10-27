@@ -16,9 +16,10 @@ import { CampaignsService } from './campaigns.service';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
 import { UpdateCampaignDto } from './dto/update-campaign.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InternalOnlyGuard } from '../auth/guards/internal-only.guard';
 
 @Controller('campaigns')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, InternalOnlyGuard)
 export class CampaignsController {
   constructor(private readonly campaignsService: CampaignsService) {}
 

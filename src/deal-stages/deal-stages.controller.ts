@@ -15,9 +15,10 @@ import { DealStagesService } from './deal-stages.service';
 import { CreateDealStageDto } from './dto/create-deal-stage.dto';
 import { UpdateDealStageDto } from './dto/update-deal-stage.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InternalOnlyGuard } from '../auth/guards/internal-only.guard';
 
 @Controller('deal-stages')
-@UseGuards(JwtAuthGuard) // Todos os endpoints protegidos por JWT
+@UseGuards(JwtAuthGuard, InternalOnlyGuard) // Protegido por JWT e restrito a internos
 export class DealStagesController {
   constructor(private readonly dealStagesService: DealStagesService) {}
 
