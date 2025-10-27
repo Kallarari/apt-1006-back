@@ -10,15 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo de usuário para autenticação
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  password       String
+  name           String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  userType       String   @default("interno") @map("user_type") @db.VarChar(20)
+  userInterestId Int?     @map("user_interest_id")
+  createdBy      Int?     @map("created_by")
 
   @@map("users")
 }
