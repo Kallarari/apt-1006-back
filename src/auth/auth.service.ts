@@ -34,7 +34,7 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-        userType: 'external',
+        userType: 'externo',
       } as any,
       select: {
         id: true,
