@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InternalOnlyGuard } from '../auth/guards/internal-only.guard';
 import { UsersService } from './users.service';
 import { CreateInternalUserDto } from './dto/create-internal-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -40,6 +41,24 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async listInternal() {
     return this.usersService.findAllInternal();
+  }
+
+  // Editar dados do usuário (nome, email, senha) - apenas o próprio usuário
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+    @Request() req: any,
+  ) {
+    return this.usersService.updateUser({
+      userId: id,
+      requesterId: req.user?.id,
+      name: dto.name,
+      email: dto.email,
+      password: dto.password,
+    });
   }
 
   // Desativar usuário (soft delete): is_active=false, deleted_by=caller, bloqueia login e listagem
