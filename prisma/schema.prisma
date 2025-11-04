@@ -22,6 +22,9 @@ model User {
   userInterestId Int?     @map("user_interest_id")
   createdBy      Int?     @map("created_by")
 
+  // Relacionamento com arquivos de negócios
+  businessFiles  BusinessFile[]
+
   @@map("users")
 }
 
@@ -61,6 +64,8 @@ model Business {
 
   // Relacionamento com leads
   leads                Lead[]
+  // Relacionamento com arquivos
+  businessFiles        BusinessFile[]
 
   @@map("business")
 }
@@ -142,4 +147,24 @@ model File {
 
   @@map("files")
   @@index([uploadedBy])
+}
+
+// Arquivos associados a negócios
+model BusinessFile {
+  id          Int      @id @default(autoincrement())
+  businessId  Int      @map("business_id")
+  uploadBy    Int      @map("upload_by")
+  filename    String   @db.VarChar(255)
+  fileType    String?  @db.VarChar(100) @map("file_type")
+  publicUrl   String?  @db.Text @map("public_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  uploader    User     @relation(fields: [uploadBy], references: [id], onDelete: SetNull)
+
+  @@map("business_files")
+  @@index([businessId])
+  @@index([isActive])
 }

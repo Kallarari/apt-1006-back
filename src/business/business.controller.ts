@@ -12,18 +12,29 @@ import {
   UseGuards,
   Query,
   Req,
+  UnauthorizedException,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { BusinessService } from './business.service';
+import { FilesService } from '../files/files.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { ChangeStageDto } from './dto/change-stage.dto';
+import { CreateBusinessFileDto } from './dto/create-business-file.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InternalOnlyGuard } from '../auth/guards/internal-only.guard';
 
 @Controller('business')
-@UseGuards(JwtAuthGuard, InternalOnlyGuard) // Protegido por JWT e restrito a internos
+@UseGuards(JwtAuthGuard, InternalOnlyGuard) 
 export class BusinessController {
-  constructor(private readonly businessService: BusinessService) {}
+  constructor(
+    private readonly businessService: BusinessService,
+    private readonly filesService: FilesService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -61,16 +72,16 @@ export class BusinessController {
     return this.businessService.findByResponsible(responsible);
   }
 
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.businessService.findOne(id);
-  }
-
   @Get(':id/history')
   @HttpCode(HttpStatus.OK)
   findHistory(@Param('id', ParseIntPipe) id: number) {
     return this.businessService.getHistory(id);
+  }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.businessService.findOne(id);
   }
 
   @Patch(':id')
@@ -97,6 +108,54 @@ export class BusinessController {
   @HttpCode(HttpStatus.OK)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.businessService.remove(id);
+  }
+
+  @Post(':id/files')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: Number(process.env.MAX_FILE_SIZE_BYTES || 10 * 1024 * 1024),
+      },
+    }),
+  )
+  async associateFile(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
+    const uploadBy = req.user?.id;
+    if (!uploadBy) {
+      throw new UnauthorizedException('Usuário não autenticado');
+    }
+
+    if (!file) {
+      throw new BadRequestException('Arquivo não fornecido');
+    }
+
+    // 1. Fazer upload para GCP usando FilesService
+    const uploadedFiles = await this.filesService.uploadMany([file], uploadBy);
+    const uploadedFile = uploadedFiles[0];
+
+    // 2. Criar DTO com os dados do arquivo enviado
+    const createBusinessFileDto: CreateBusinessFileDto = {
+      filename: file.originalname || uploadedFile.id,
+      fileType: file.mimetype,
+      publicUrl: uploadedFile.publicUrl,
+    };
+
+    // 3. Associar arquivo ao business
+    return this.businessService.associateFile(id, createBusinessFileDto, uploadBy);
+  }
+
+  @Delete(':id/files/:fileId')
+  @HttpCode(HttpStatus.OK)
+  removeFile(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('fileId', ParseIntPipe) fileId: number,
+  ) {
+    return this.businessService.removeFile(id, fileId);
   }
 }
 
