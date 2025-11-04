@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { ChangeStageDto } from './dto/change-stage.dto';
+import { CreateBusinessFileDto } from './dto/create-business-file.dto';
 
 @Injectable()
 export class BusinessService {
@@ -37,6 +38,29 @@ export class BusinessService {
   async findOne(id: number) {
     const business = await this.prisma.business.findUnique({
       where: { id },
+      include: {
+        businessFiles: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            filename: true,
+            fileType: true,
+            publicUrl: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+            uploadBy: true,
+            uploader: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!business) {
@@ -282,6 +306,79 @@ export class BusinessService {
       })),
       count: history.length,
       message: 'Histórico recuperado com sucesso',
+    };
+  }
+
+  async associateFile(businessId: number, createBusinessFileDto: CreateBusinessFileDto, uploadBy: number) {
+    // Verificar se o negócio existe
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+    });
+
+    if (!business) {
+      throw new NotFoundException(`Negócio com ID ${businessId} não encontrado`);
+    }
+
+    // Verificar se o usuário existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: uploadBy },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${uploadBy} não encontrado`);
+    }
+
+    // Criar associação do arquivo com o negócio
+    const businessFile = await this.prisma.businessFile.create({
+      data: {
+        businessId,
+        uploadBy,
+        filename: createBusinessFileDto.filename,
+        fileType: createBusinessFileDto.fileType,
+        publicUrl: createBusinessFileDto.publicUrl,
+        isActive: true,
+      },
+      include: {
+        uploader: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return {
+      ...businessFile,
+      message: 'Arquivo associado ao negócio com sucesso',
+    };
+  }
+
+  async removeFile(businessId: number, fileId: number) {
+    // Verificar se o arquivo existe e pertence ao negócio
+    const businessFile = await this.prisma.businessFile.findFirst({
+      where: {
+        id: fileId,
+        businessId: businessId,
+        isActive: true,
+      },
+    });
+
+    if (!businessFile) {
+      throw new NotFoundException(
+        `Arquivo com ID ${fileId} não encontrado ou não pertence ao negócio ${businessId}`,
+      );
+    }
+
+    // Soft delete: marcar como inativo
+    await this.prisma.businessFile.update({
+      where: { id: fileId },
+      data: { isActive: false },
+    });
+
+    return {
+      message: 'Arquivo removido do negócio com sucesso',
     };
   }
 }
